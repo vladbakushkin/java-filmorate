@@ -18,10 +18,11 @@ import java.util.Map;
 public class FilmController {
 
     private final Map<Integer, Film> films = new HashMap<>();
+    private final GeneratorId generatorId = new GeneratorId();
 
     @PostMapping
     public Film addFilm(@Valid @RequestBody Film film) throws ValidationException {
-        int id = GeneratorId.incrementAndGetFilmId();
+        int id = generatorId.generateNewId();
         film.setId(id);
         films.put(id, film);
         log.debug("Добавлен фильм: {}, {}, {}, {}, {}",
@@ -32,7 +33,7 @@ public class FilmController {
     @PutMapping
     public Film updateFilm(@Valid @RequestBody Film film) throws ValidationException {
         if (!films.containsKey(film.getId())) {
-            throw new ValidationException("Такого фильма нет в базе.");
+            throw new ValidationException("Такого фильма нет в хранилище.");
         }
 
         films.put(film.getId(), film);

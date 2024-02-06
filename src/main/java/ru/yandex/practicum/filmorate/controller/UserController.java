@@ -18,6 +18,7 @@ import java.util.Map;
 public class UserController {
 
     private final Map<Integer, User> users = new HashMap<>();
+    private final GeneratorId generatorId = new GeneratorId();
 
     @PostMapping
     public User createUser(@Valid @RequestBody User user) throws ValidationException {
@@ -26,7 +27,7 @@ public class UserController {
             user.setName(user.getLogin());
         }
 
-        int id = GeneratorId.incrementAndGetUserId();
+        int id = generatorId.generateNewId();
         user.setId(id);
         users.put(id, user);
         log.debug("Создан пользователь: {}, {}, {}, {}, {}",
