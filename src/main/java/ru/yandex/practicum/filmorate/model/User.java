@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
+import ru.yandex.practicum.filmorate.annotation.WithoutSpaces;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
@@ -20,6 +21,7 @@ public class User {
     private String email;
 
     @NotBlank(message = "Login cannot be empty")
+    @WithoutSpaces
     private String login;
 
     private String name;

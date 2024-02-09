@@ -69,6 +69,14 @@ class UserControllerTest {
                                 .content(objectMapper.writeValueAsString(user3))
                                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
+
+        User user4 = new User("mail@mail.ru", "fail fail", "Nick Name", "1946-08-20");
+
+        mockMvc.perform(
+                        post("/users")
+                                .content(objectMapper.writeValueAsString(user4))
+                                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
