@@ -11,6 +11,8 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Film.
@@ -34,10 +36,13 @@ public class Film {
     @PositiveDuration
     private Duration duration;
 
+    private Set<Integer> likes;    // id пользователей лайкнувших фильм
+
     public Film(String name, String description, String releaseDate, long duration) {
         this.name = name;
         this.description = description;
         this.releaseDate = LocalDate.parse(releaseDate);
         this.duration = Duration.ofMinutes(duration);
+        this.likes = new HashSet<>();
     }
 }
