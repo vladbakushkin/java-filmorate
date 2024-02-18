@@ -1,18 +1,14 @@
 package ru.yandex.practicum.filmorate.service;
 
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.stream.Collectors;
 
-@Getter
 @Service
 @Slf4j
 public class UserService {
@@ -79,37 +75,28 @@ public class UserService {
     }
 
     public List<User> getFriends(int id) {
-        User user = userStorage.getUser(id);
+        final User user = userStorage.getUser(id);
 
-        List<User> friends = new ArrayList<>();
-
-        for (User storageUser : userStorage.getUsers()) {
-            for (int friendId : user.getFriends()) {
-                if (storageUser.getId() == friendId) {
-                    friends.add(storageUser);
-                }
-            }
-        }
-        return friends;
+        return userStorage.getUsers().stream()
+                .map(User::getId)
+                .filter(user.getFriends()::contains)
+                .map(userStorage::getUser)
+                .collect(Collectors.toList());
     }
 
     public List<User> getMutualFriends(int userId1, int userId2) {
 
         final User user1 = userStorage.getUser(userId1);
         final User user2 = userStorage.getUser(userId2);
-        Set<Integer> friendsUser1 = new HashSet<>(user1.getFriends());
-        Set<Integer> friendsUser2 = new HashSet<>(user2.getFriends());
 
-        friendsUser1.retainAll(friendsUser2);
+        List<Integer> mutualFriendsId = user1.getFriends().stream()
+                .filter(user2.getFriends()::contains)
+                .collect(Collectors.toList());
 
-        List<User> mutualFriends = new ArrayList<>();
-        for (int friendId : friendsUser1) {
-            for (User user : userStorage.getUsers()) {
-                if (user.getId() == friendId) {
-                    mutualFriends.add(user);
-                }
-            }
-        }
-        return mutualFriends;
+        return userStorage.getUsers().stream()
+                .map(User::getId)
+                .filter(mutualFriendsId::contains)
+                .map(userStorage::getUser)
+                .collect(Collectors.toList());
     }
 }
