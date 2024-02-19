@@ -21,8 +21,8 @@ import java.util.Set;
 @Data
 public class Film {
 
-    public final static Comparator<Film> COMPARATOR_LIKES_ASC = Comparator.comparing(f -> f.getLikes().size());
-    public final static Comparator<Film> COMPARATOR_LIKES_DESC = COMPARATOR_LIKES_ASC.reversed();
+    public static final Comparator<Film> COMPARATOR_LIKES_ASC = Comparator.comparing(f -> f.getLikes().size());
+    public static final Comparator<Film> COMPARATOR_LIKES_DESC = COMPARATOR_LIKES_ASC.reversed();
 
     private int id;
 
