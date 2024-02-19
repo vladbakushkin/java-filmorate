@@ -8,7 +8,6 @@ import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -55,7 +54,7 @@ public class FilmService {
     public Film addLike(int filmId, int userId) {
         final Film film = filmStorage.getFilm(filmId);
         final User user = userStorage.getUser(userId);
-        film.getLikes().add(userId);
+        film.addLike(user.getId());
         filmStorage.updateFilm(film);
         log.debug("Добавлен лайк фильму: {}, все лайки: {}",
                 film.getId(), film.getLikes().toString());
@@ -65,7 +64,7 @@ public class FilmService {
     public Film removeLike(int filmId, int userId) {
         final Film film = filmStorage.getFilm(filmId);
         final User user = userStorage.getUser(userId);
-        film.getLikes().remove(userId);
+        film.removeLike(user.getId());
         filmStorage.updateFilm(film);
         log.debug("Удален лайк у фильма: {}, все лайки: {}",
                 film.getId(), film.getLikes().toString());
@@ -73,11 +72,9 @@ public class FilmService {
     }
 
     public List<Film> getMostPopularFilms(int count) {
-        Comparator<Film> likesComparatorAsc = Comparator.comparing(f -> f.getLikes().size());
-        Comparator<Film> likesComparatorDesc = likesComparatorAsc.reversed();
 
         List<Film> mostPopularFilms = filmStorage.getFilms().stream()
-                .sorted(likesComparatorDesc)
+                .sorted(Film.COMPARATOR_LIKES_DESC)
                 .limit(count)
                 .collect(Collectors.toList());
 

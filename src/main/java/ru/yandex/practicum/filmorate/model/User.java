@@ -41,4 +41,16 @@ public class User {
         this.birthday = LocalDate.parse(birthday);
         this.friends = new HashSet<>();
     }
+
+    public Set<Integer> getFriends() {
+        return new HashSet<>(friends);
+    }
+
+    public void addFriend(int friendId) {
+        friends.add(friendId);
+    }
+
+    public void removeFriend(int friendId) {
+        friends.remove(friendId);
+    }
 }

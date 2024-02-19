@@ -51,8 +51,8 @@ public class UserService {
         final User user1 = userStorage.getUser(userId1);
         final User user2 = userStorage.getUser(userId2);
 
-        user1.getFriends().add(user2.getId());
-        user2.getFriends().add(user1.getId());
+        user1.addFriend(user2.getId());
+        user2.addFriend(user1.getId());
         log.debug("Пользователь id = {} добавил в друзья пользователя id =  {}.",
                 user1.getId(), user2.getId());
 
@@ -64,8 +64,8 @@ public class UserService {
         final User user1 = userStorage.getUser(userId1);
         final User user2 = userStorage.getUser(userId2);
 
-        user1.getFriends().remove(user2.getId());
-        user2.getFriends().remove(user1.getId());
+        user1.removeFriend(user2.getId());
+        user2.removeFriend(user1.getId());
 
         log.debug("Пользователь id = {} удалил из друзей пользователя id =  {}.",
                 user1.getId(), user2.getId());

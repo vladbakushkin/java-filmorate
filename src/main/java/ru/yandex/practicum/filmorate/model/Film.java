@@ -11,6 +11,7 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -19,6 +20,9 @@ import java.util.Set;
  */
 @Data
 public class Film {
+
+    public final static Comparator<Film> COMPARATOR_LIKES_ASC = Comparator.comparing(f -> f.getLikes().size());
+    public final static Comparator<Film> COMPARATOR_LIKES_DESC = COMPARATOR_LIKES_ASC.reversed();
 
     private int id;
 
@@ -44,5 +48,17 @@ public class Film {
         this.releaseDate = LocalDate.parse(releaseDate);
         this.duration = Duration.ofMinutes(duration);
         this.likes = new HashSet<>();
+    }
+
+    public Set<Integer> getLikes() {
+        return new HashSet<>(likes);
+    }
+
+    public void addLike(int userId) {
+        likes.add(userId);
+    }
+
+    public void removeLike(int userId) {
+        likes.remove(userId);
     }
 }
