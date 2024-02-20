@@ -2,14 +2,17 @@ package ru.yandex.practicum.filmorate.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
+import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.List;
@@ -20,14 +23,22 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(UserController.class)
+@SpringBootTest
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 class UserControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
 
-    @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private WebApplicationContext webApplicationContext;
+
+    @BeforeEach
+    public void setUp() {
+        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+    }
 
     @Test
     void test1_createUser() throws Exception {
@@ -67,6 +78,14 @@ class UserControllerTest {
         mockMvc.perform(
                         post("/users")
                                 .content(objectMapper.writeValueAsString(user3))
+                                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+
+        User user4 = new User("mail@mail.ru", "fail fail", "Nick Name", "1946-08-20");
+
+        mockMvc.perform(
+                        post("/users")
+                                .content(objectMapper.writeValueAsString(user4))
                                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
     }
@@ -144,12 +163,11 @@ class UserControllerTest {
                         put("/users")
                                 .content(objectMapper.writeValueAsString(updatedUser))
                                 .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isInternalServerError())
-                .andExpect(result -> assertInstanceOf(ValidationException.class, result.getResolvedException()));
+                .andExpect(status().isNotFound())
+                .andExpect(result -> assertInstanceOf(UserNotFoundException.class, result.getResolvedException()));
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
     void test7_getAllUsers() throws Exception {
         User user1 = new User("one@mail.ru", "1", "name1", "1980-08-20");
 
@@ -176,7 +194,7 @@ class UserControllerTest {
         List<User> usersList = objectMapper.readValue(responseJson, new TypeReference<>() {
         });
 
-        assertEquals(2, usersList.size(), "Неверное количество фильмов в списке.");
+        assertEquals(2, usersList.size(), "Неверное количество пользователей в списке.");
 
         assertEquals(user1.getName(), usersList.get(0).getName(), "Неверное имя пользователя.");
         assertEquals(user1.getEmail(), usersList.get(0).getEmail(), "Неверный email пользователя.");
@@ -226,5 +244,233 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.login").value("common"))
                 .andExpect(jsonPath("$.name").value("common"))
                 .andExpect(jsonPath("$.birthday").value("2000-08-20"));
+    }
+
+    @Test
+    void test9_getUserById1() throws Exception {
+        User user = new User("mail@mail.ru", "dolore", "Nick Name", "1946-08-20");
+
+        mockMvc.perform(
+                        post("/users")
+                                .content(objectMapper.writeValueAsString(user))
+                                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        MvcResult mvcResult = mockMvc.perform(get("/users/1"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String responseJson = mvcResult.getResponse().getContentAsString();
+        User userFromJson = objectMapper.readValue(responseJson, User.class);
+
+        assertEquals(user.getName(), userFromJson.getName(), "Неверное имя пользователя.");
+        assertEquals(user.getEmail(), userFromJson.getEmail(), "Неверный email пользователя.");
+        assertEquals(user.getLogin(), userFromJson.getLogin(), "Неверный логин пользователя.");
+        assertEquals(user.getBirthday(), userFromJson.getBirthday(), "Неверная дата рождения пользователя.");
+    }
+
+    @Test
+    void test10_getUserUnknownWithId9999() throws Exception {
+        User user = new User("mail@mail.ru", "dolore", "Nick Name", "1946-08-20");
+
+        mockMvc.perform(
+                        post("/users")
+                                .content(objectMapper.writeValueAsString(user))
+                                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/users/9999"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void test11_userGetEmptyMutualFriends() throws Exception {
+        User user = new User("mail@mail.ru", "dolore", "Nick Name", "1946-08-20");
+        mockMvc.perform(
+                        post("/users")
+                                .content(objectMapper.writeValueAsString(user))
+                                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        User friend = new User("friend@mail.ru", "friend", "friend adipisicing", "1976-08-20");
+        mockMvc.perform(
+                        post("/users")
+                                .content(objectMapper.writeValueAsString(friend))
+                                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        MvcResult mvcResult = mockMvc.perform(get("/users/1/friends/common/2"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String responseJson = mvcResult.getResponse().getContentAsString();
+        List<User> usersList = objectMapper.readValue(responseJson, new TypeReference<>() {
+        });
+
+        assertEquals(0, usersList.size(), "Список общих друзей не пуст.");
+    }
+
+    @Test
+    void test12_addFriend() throws Exception {
+        User user = new User("mail@mail.ru", "dolore", "Nick Name", "1946-08-20");
+        mockMvc.perform(
+                        post("/users")
+                                .content(objectMapper.writeValueAsString(user))
+                                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        User friend = new User("friend@mail.ru", "friend", "friend adipisicing", "1976-08-20");
+        mockMvc.perform(
+                        post("/users")
+                                .content(objectMapper.writeValueAsString(friend))
+                                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(
+                        put("/users/1/friends/2"))
+                .andExpect(status().isOk());
+
+        MvcResult mvcResult1 = mockMvc.perform(get("/users/1/friends"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String friendJson1 = mvcResult1.getResponse().getContentAsString();
+        List<User> friends1 = objectMapper.readValue(friendJson1, new TypeReference<>() {
+        });
+
+        assertEquals(1, friends1.size(), "Неверное количество друзей в списке.");
+
+        assertEquals(friend.getName(), friends1.get(0).getName(), "Неверное имя пользователя.");
+        assertEquals(friend.getEmail(), friends1.get(0).getEmail(), "Неверный email пользователя.");
+        assertEquals(friend.getLogin(), friends1.get(0).getLogin(), "Неверный логин пользователя.");
+        assertEquals(friend.getBirthday(), friends1.get(0).getBirthday(), "Неверная дата рождения пользователя.");
+
+        MvcResult mvcResult2 = mockMvc.perform(get("/users/2/friends"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String friendJson2 = mvcResult2.getResponse().getContentAsString();
+        List<User> friends2 = objectMapper.readValue(friendJson2, new TypeReference<>() {
+        });
+
+        assertEquals(1, friends2.size(), "Неверное количество друзей в списке.");
+
+        assertEquals(user.getName(), friends2.get(0).getName(), "Неверное имя пользователя.");
+        assertEquals(user.getEmail(), friends2.get(0).getEmail(), "Неверный email пользователя.");
+        assertEquals(user.getLogin(), friends2.get(0).getLogin(), "Неверный логин пользователя.");
+        assertEquals(user.getBirthday(), friends2.get(0).getBirthday(), "Неверная дата рождения пользователя.");
+    }
+
+    @Test
+    void test13_addFriendUnknownId() throws Exception {
+        User user = new User("mail@mail.ru", "dolore", "Nick Name", "1946-08-20");
+        mockMvc.perform(
+                        post("/users")
+                                .content(objectMapper.writeValueAsString(user))
+                                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        User friend = new User("friend@mail.ru", "friend", "friend adipisicing", "1976-08-20");
+        mockMvc.perform(
+                        post("/users")
+                                .content(objectMapper.writeValueAsString(friend))
+                                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(
+                        put("/users/1/friends/-1"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void test14_getMutualFriends() throws Exception {
+        User user = new User("mail@mail.ru", "dolore", "Nick Name", "1946-08-20");
+        mockMvc.perform(
+                        post("/users")
+                                .content(objectMapper.writeValueAsString(user))
+                                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        User friend = new User("friend@mail.ru", "friend", "friend adipisicing", "1976-08-20");
+        mockMvc.perform(
+                        post("/users")
+                                .content(objectMapper.writeValueAsString(friend))
+                                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        User mutualFriend = new User("friend@common.ru", "common", "", "2000-08-20");
+        mockMvc.perform(
+                        post("/users")
+                                .content(objectMapper.writeValueAsString(mutualFriend))
+                                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(
+                        put("/users/1/friends/3"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(
+                        put("/users/2/friends/3"))
+                .andExpect(status().isOk());
+
+        MvcResult mvcResult = mockMvc.perform(get("/users/1/friends/common/2"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String friendsJson = mvcResult.getResponse().getContentAsString();
+        List<User> friends = objectMapper.readValue(friendsJson, new TypeReference<>() {
+        });
+
+        assertEquals(1, friends.size(), "Неверное количество друзей в списке.");
+
+        assertEquals("common", friends.get(0).getName(), "Неверное имя пользователя.");
+        assertEquals(mutualFriend.getEmail(), friends.get(0).getEmail(), "Неверный email пользователя.");
+        assertEquals(mutualFriend.getLogin(), friends.get(0).getLogin(), "Неверный логин пользователя.");
+        assertEquals(mutualFriend.getBirthday(), friends.get(0).getBirthday(), "Неверная дата рождения пользователя.");
+    }
+
+    @Test
+    void test15_removeFriend() throws Exception {
+        User user = new User("mail@mail.ru", "dolore", "Nick Name", "1946-08-20");
+        mockMvc.perform(
+                        post("/users")
+                                .content(objectMapper.writeValueAsString(user))
+                                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        User friend = new User("friend@mail.ru", "friend", "friend adipisicing", "1976-08-20");
+        mockMvc.perform(
+                        post("/users")
+                                .content(objectMapper.writeValueAsString(friend))
+                                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(
+                        put("/users/1/friends/2"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(
+                        delete("/users/1/friends/2"))
+                .andExpect(status().isOk());
+
+        MvcResult mvcResult1 = mockMvc.perform(get("/users/1/friends"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String friendJson1 = mvcResult1.getResponse().getContentAsString();
+        List<User> friends1 = objectMapper.readValue(friendJson1, new TypeReference<>() {
+        });
+
+        assertEquals(0, friends1.size(), "Неверное количество друзей в списке.");
+
+        MvcResult mvcResult2 = mockMvc.perform(get("/users/2/friends"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String friendJson2 = mvcResult2.getResponse().getContentAsString();
+        List<User> friends2 = objectMapper.readValue(friendJson2, new TypeReference<>() {
+        });
+
+        assertEquals(0, friends2.size(), "Неверное количество друзей в списке.");
     }
 }
