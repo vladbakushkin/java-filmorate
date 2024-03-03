@@ -121,11 +121,11 @@ FROM user
 <details> <summary>Получение списка `N` наиболее популярных фильмов</summary>  
 
 ```sql  
-SELECT film.name, COUNT(user.id) AS total_likes  
-FROM film  
-JOIN film_like ON film.id = film_like.film_id  
-JOIN user ON film_like.user_id = user.id  
-GROUP BY film.name  
+SELECT f.name, COUNT(fl.user_id) AS total_likes  
+FROM film AS f 
+JOIN film_like AS fl ON f.id = fl.film_id   
+GROUP BY f.name  
+ORDER BY total_likes DESC
 LIMIT N -- подставить количество фильмов для вывода  
 ```  
 
