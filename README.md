@@ -118,7 +118,7 @@ FROM user
 
 </details>  
 
-<details> <summary>Получение списка `N` наиболее популярных фильмов</summary>  
+<details> <summary>Получение списка `?` наиболее популярных фильмов</summary>  
 
 ```sql  
 SELECT f.name, COUNT(fl.user_id) AS total_likes  
@@ -126,7 +126,7 @@ FROM film AS f
 JOIN film_like AS fl ON f.id = fl.film_id   
 GROUP BY f.name  
 ORDER BY total_likes DESC
-LIMIT N -- подставить количество фильмов для вывода  
+LIMIT ? -- подставить количество фильмов для вывода  
 ```  
 
 </details>  
@@ -134,11 +134,12 @@ LIMIT N -- подставить количество фильмов для вы�
 <details> <summary>Получение списка общих друзей с другим пользователем</summary>  
 
 ```sql  
-SELECT user.name  
-FROM user  
-JOIN friendship ON user.id = friendship.user_id  
-JOIN user AS friend ON friendship.friend_id = friend.id  
-WHERE friend_status_confirm IS NOT FALSE  
+SELECT u.id as friend_id, u.email, u.login, u.name, u.birthday
+FROM user_account u
+JOIN (SELECT friend_id FROM friendship WHERE user_id = ?) fs1
+JOIN (SELECT friend_id FROM friendship WHERE user_id = ?) fs2
+ON fs1.friend_id = fs2.friend_id
+WHERE u.id = fs1.friend_id;
 ```  
 
 </details>
