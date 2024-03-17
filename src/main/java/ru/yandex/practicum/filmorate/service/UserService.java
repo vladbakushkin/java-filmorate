@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
@@ -16,22 +17,28 @@ public class UserService {
     private final UserStorage userStorage;
 
     @Autowired
-    public UserService(UserStorage userStorage) {
+    public UserService(@Qualifier("UserDbStorage") UserStorage userStorage) {
         this.userStorage = userStorage;
     }
 
     public User createUser(User user) {
-        userStorage.createUser(user);
+        User userCreated = userStorage.createUser(user);
         log.debug("Создан пользователь: {}, {}, {}, {}, {}",
-                user.getId(), user.getEmail(), user.getLogin(), user.getName(), user.getBirthday());
-        return user;
+                userCreated.getId(), userCreated.getEmail(), userCreated.getLogin(), userCreated.getName(),
+                userCreated.getBirthday());
+        return userCreated;
     }
 
     public User updateUser(User user) {
-        userStorage.updateUser(user);
-        log.debug("Обновлен пользователь: {}, {}, {}, {}, {}",
-                user.getId(), user.getEmail(), user.getLogin(), user.getName(), user.getBirthday());
-        return user;
+        User userOriginal = userStorage.getUser(user.getId());
+        User userUpdated = userStorage.updateUser(user);
+        log.debug("Обновлен пользователь (старые данные): {}, {}, {}, {}, {}",
+                userOriginal.getId(), userOriginal.getEmail(), userOriginal.getLogin(), userOriginal.getName(),
+                userOriginal.getBirthday());
+        log.debug("Обновлен пользователь (новые данные): {}, {}, {}, {}, {}",
+                userUpdated.getId(), userUpdated.getEmail(), userUpdated.getLogin(), userUpdated.getName(),
+                userUpdated.getBirthday());
+        return userUpdated;
     }
 
     public List<User> findAll() {
