@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.storage.dao;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
@@ -32,6 +33,7 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public User updateUser(User user) {
+        checkUserInStorage(user.getId());
         String sql = "UPDATE user_account SET email = ?, login = ?, name = ?, birthday = ? where id = ?";
         jdbcTemplate.update(sql, user.getEmail(), user.getLogin(), user.getName(), user.getBirthday(), user.getId());
         return user;
@@ -39,6 +41,7 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public void deleteUser(int id) {
+        checkUserInStorage(id);
         String sql = "DELETE FROM user_account WHERE id = ?";
         jdbcTemplate.update(sql, id);
     }
@@ -51,6 +54,7 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public User getUser(int id) {
+        checkUserInStorage(id);
         String sql = "SELECT * FROM user_account WHERE id = ?";
         return jdbcTemplate.queryForObject(sql, this::mapRowToUser, id);
     }
@@ -62,5 +66,14 @@ public class UserDbStorage implements UserStorage {
                 rs.getString("birthday"));
         user.setId(rs.getInt("id"));
         return user;
+    }
+
+    private void checkUserInStorage(Integer id) {
+        String checkSql = "SELECT COUNT(*) FROM USER_ACCOUNT WHERE id = ?";
+        Integer count = jdbcTemplate.queryForObject(checkSql, Integer.class, id);
+
+        if (count == null || count == 0) {
+            throw new UserNotFoundException("Пользователя с id \"" + id + "\" нет в хранилище.");
+        }
     }
 }
