@@ -26,6 +26,7 @@ public class FriendshipDao {
     public void removeFriend(int userId, int friendId) {
         String sql = "DELETE FROM friendship WHERE user_id = ? AND friend_id = ?";
         jdbcTemplate.update(sql, userId, friendId);
+        // TODO: разорвать статус дружбы
     }
 
     public List<User> getFriends(int userId) {
@@ -37,6 +38,7 @@ public class FriendshipDao {
     }
 
     public List<User> getMutualFriends(int userId1, int userId2) {
+        // TODO: проверка подтвержденной дружбы?
         String sql = "SELECT u.id as friend_id, u.email, u.login, u.name, u.birthday " +
                 "FROM user_account u " +
                 "JOIN (SELECT friend_id FROM friendship WHERE user_id = ?) fs1 " +
