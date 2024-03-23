@@ -2,47 +2,49 @@ package ru.yandex.practicum.filmorate.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
 import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
+@AutoConfigureMockMvc
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 class UserControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private WebApplicationContext webApplicationContext;
-
-    @BeforeEach
-    public void setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
-    }
+    @MockBean
+    private UserService userService;
 
     @Test
     void test1_createUser() throws Exception {
         User user = new User("mail@mail.ru", "dolore", "Nick Name", "1946-08-20");
+
+        when(userService.createUser(user)).thenReturn(user);
 
         mockMvc.perform(
                         post("/users")
@@ -134,6 +136,12 @@ class UserControllerTest {
                 "", "1976-09-20");
         updatedUser.setId(1);
 
+        User mockUser = new User("mail@yandex.ru", "doloreUpdate",
+                "doloreUpdate", "1976-09-20");
+        mockUser.setId(1);
+
+        when(userService.updateUser(updatedUser)).thenReturn(mockUser);
+
         mockMvc.perform(
                         put("/users")
                                 .content(objectMapper.writeValueAsString(updatedUser))
@@ -158,6 +166,8 @@ class UserControllerTest {
         User updatedUser = new User("mail@yandex.ru", "doloreUpdate",
                 "est adipisicing", "1976-09-20");
         updatedUser.setId(9999);
+
+        when(userService.updateUser(any(User.class))).thenThrow(new UserNotFoundException("User not found"));
 
         mockMvc.perform(
                         put("/users")
@@ -185,6 +195,8 @@ class UserControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
+        when(userService.findAll()).thenReturn(List.of(user1, user2));
+
         MvcResult mvcResult = mockMvc.perform(get("/users"))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -210,6 +222,9 @@ class UserControllerTest {
     @Test
     void test8_createUserWithEmptyName() throws Exception {
         User user1 = new User("friend@common.ru", "common", null, "2000-08-20");
+
+        User mockUser = new User("friend@common.ru", "common", "common", "2000-08-20");
+        when(userService.createUser(any(User.class))).thenReturn(mockUser);
 
         mockMvc.perform(
                         post("/users")
@@ -256,6 +271,8 @@ class UserControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
+        when(userService.findUserById(1)).thenReturn(user);
+
         MvcResult mvcResult = mockMvc.perform(get("/users/1"))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -278,6 +295,8 @@ class UserControllerTest {
                                 .content(objectMapper.writeValueAsString(user))
                                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
+
+        when(userService.findUserById(9999)).thenThrow(new UserNotFoundException("User not found"));
 
         mockMvc.perform(get("/users/9999"))
                 .andExpect(status().isNotFound());
@@ -330,6 +349,8 @@ class UserControllerTest {
                         put("/users/1/friends/2"))
                 .andExpect(status().isOk());
 
+        when(userService.getFriends(1)).thenReturn(List.of(friend));
+
         MvcResult mvcResult1 = mockMvc.perform(get("/users/1/friends"))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -344,6 +365,8 @@ class UserControllerTest {
         assertEquals(friend.getEmail(), friends1.get(0).getEmail(), "Неверный email пользователя.");
         assertEquals(friend.getLogin(), friends1.get(0).getLogin(), "Неверный логин пользователя.");
         assertEquals(friend.getBirthday(), friends1.get(0).getBirthday(), "Неверная дата рождения пользователя.");
+
+        when(userService.getFriends(2)).thenReturn(List.of(user));
 
         MvcResult mvcResult2 = mockMvc.perform(get("/users/2/friends"))
                 .andExpect(status().isOk())
@@ -377,6 +400,8 @@ class UserControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
+        doThrow(new UserNotFoundException("User not found")).when(userService).addFriend(1, -1);
+
         mockMvc.perform(
                         put("/users/1/friends/-1"))
                 .andExpect(status().isNotFound());
@@ -398,7 +423,7 @@ class UserControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
-        User mutualFriend = new User("friend@common.ru", "common", "", "2000-08-20");
+        User mutualFriend = new User("friend@common.ru", "common", "common", "2000-08-20");
         mockMvc.perform(
                         post("/users")
                                 .content(objectMapper.writeValueAsString(mutualFriend))
@@ -412,6 +437,8 @@ class UserControllerTest {
         mockMvc.perform(
                         put("/users/2/friends/3"))
                 .andExpect(status().isOk());
+
+        when(userService.getMutualFriends(1, 2)).thenReturn(List.of(mutualFriend));
 
         MvcResult mvcResult = mockMvc.perform(get("/users/1/friends/common/2"))
                 .andExpect(status().isOk())
