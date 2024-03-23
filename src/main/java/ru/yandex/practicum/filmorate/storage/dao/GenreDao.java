@@ -32,10 +32,13 @@ public class GenreDao {
         }
     }
 
+    public Collection<Genre> findGenresByFilmId(int filmId) {
+        String sqlGenres = "SELECT fg.GENRE_ID as ID, g.NAME FROM FILM_GENRE fg JOIN GENRE g ON fg.GENRE_ID = g.ID " +
+                "WHERE fg.FILM_ID = ?";
+        return jdbcTemplate.query(sqlGenres, this::mapRowToGenre, filmId);
+    }
+
     private Genre mapRowToGenre(ResultSet rs, int rowNum) throws SQLException {
-        Genre genre = new Genre();
-        genre.setId(rs.getInt("id"));
-        genre.setName(rs.getString("name"));
-        return genre;
+        return new Genre(rs.getInt("id"), rs.getString("name"));
     }
 }

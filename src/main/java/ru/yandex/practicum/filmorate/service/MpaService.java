@@ -20,6 +20,6 @@ public class MpaService {
     }
 
     public Mpa findMpaById(int id) {
-        return mpaDao.findById(id);
+        return mpaDao.findMpaById(id);
     }
 }

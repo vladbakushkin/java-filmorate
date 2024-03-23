@@ -23,7 +23,7 @@ public class MpaDao {
         return jdbcTemplate.query(sql, this::mapRowToMpa);
     }
 
-    public Mpa findById(int id) {
+    public Mpa findMpaById(int id) {
         String sql = "select * from mpa where id = ?";
         try {
             return jdbcTemplate.queryForObject(sql, this::mapRowToMpa, id);
@@ -33,9 +33,6 @@ public class MpaDao {
     }
 
     private Mpa mapRowToMpa(ResultSet rs, int rowNum) throws SQLException {
-        Mpa mpa = new Mpa();
-        mpa.setId(rs.getInt("id"));
-        mpa.setName(rs.getString("rating"));
-        return mpa;
+        return new Mpa(rs.getInt("id"), rs.getString("rating"));
     }
 }

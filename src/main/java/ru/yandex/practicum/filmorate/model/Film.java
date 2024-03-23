@@ -52,6 +52,14 @@ public class Film {
     private Collection<Genre> genres = new LinkedHashSet<>();   /* HashSet не проходит тесты в Postman
                                                                  (не совпадает порядок id в коллекции) */
 
+    public Film(String name, String description, Mpa mpa, String releaseDate, long duration) {
+        this.name = name;
+        this.description = description;
+        this.mpa = mpa;
+        this.releaseDate = LocalDate.parse(releaseDate);
+        this.duration = Duration.ofMinutes(duration);
+    }
+
     public Set<Integer> getLikes() {
         return new HashSet<>(likes);
     }
@@ -64,17 +72,15 @@ public class Film {
         likes.remove(userId);
     }
 
-    // TODO: добавить аналогичные методы для жанров
     public Collection<Genre> getGenres() {
         return new LinkedHashSet<>(genres);
     }
-
 
     public Map<String, Object> toMap() {
         Map<String, Object> values = new HashMap<>();
         values.put("name", name);
         values.put("description", description);
-        values.put("mpa", mpa);
+        values.put("mpa_id", mpa.getId());
         values.put("genres", genres);
         values.put("release_date", releaseDate);
         values.put("duration", duration);

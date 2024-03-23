@@ -74,6 +74,6 @@ public class ErrorHandler {
         return new ErrorResponse(
                 500,
                 "Internal Server Error",
-                "Произошла непредвиденная ошибка.");
+                "Произошла непредвиденная ошибка: " + e.getMessage());
     }
 }
