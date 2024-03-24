@@ -60,8 +60,15 @@ public class Film {
         this.duration = Duration.ofMinutes(duration);
     }
 
-    public Set<Integer> getLikes() {
-        return new HashSet<>(likes);
+    public Film(String name, String description, String releaseDate, long duration) {
+        this.name = name;
+        this.description = description;
+        this.releaseDate = LocalDate.parse(releaseDate);
+        this.duration = Duration.ofMinutes(duration);
+    }
+
+    public List<Integer> getLikes() {
+        return new ArrayList<>(likes);
     }
 
     public void addLike(int userId) {
@@ -72,8 +79,8 @@ public class Film {
         likes.remove(userId);
     }
 
-    public Collection<Genre> getGenres() {
-        return new LinkedHashSet<>(genres);
+    public List<Genre> getGenres() {
+        return new ArrayList<>(genres);
     }
 
     public Map<String, Object> toMap() {

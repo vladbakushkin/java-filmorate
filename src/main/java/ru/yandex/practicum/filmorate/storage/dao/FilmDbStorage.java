@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.storage.dao;
 
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
@@ -35,12 +36,8 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public void removeFilm(int id) {
-        String sql = "DELETE FROM film WHERE id = ?";
-        try {
-            jdbcTemplate.update(sql, id);
-        } catch (RuntimeException e) {
-            throw new FilmNotFoundException("Фильма с id \"" + id + "\" нет в хранилище.");
-        }
+        String sql = "DELETE FROM FILM WHERE ID = ?";
+        jdbcTemplate.update(sql, id);
     }
 
     @Override
@@ -52,7 +49,7 @@ public class FilmDbStorage implements FilmStorage {
             batchUpdateFilmGenres(film.getId(), film.getGenres());
             batchUpdateFilmLikes(film.getId(), film.getLikes());
             return getFilm(film.getId());
-        } catch (RuntimeException e) {
+        } catch (DataAccessException e) {
             throw new FilmNotFoundException("Фильма с id \"" + film.getId() + "\" нет в хранилище.");
         }
     }
@@ -68,7 +65,7 @@ public class FilmDbStorage implements FilmStorage {
         String sql = "SELECT * FROM FILM WHERE ID = ?";
         try {
             return jdbcTemplate.queryForObject(sql, new FilmMapper(new MpaDao(jdbcTemplate), new GenreDao(jdbcTemplate), new FilmLikesDao(jdbcTemplate)), id);
-        } catch (RuntimeException e) {
+        } catch (DataAccessException e) {
             throw new FilmNotFoundException("Фильма с id \"" + id + "\" нет в хранилище.");
         }
     }
