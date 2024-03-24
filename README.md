@@ -37,7 +37,7 @@
 Таблица состоит из полей:
 
 - `id` — **primary key** — идентификатор рейтинга;
-- `rating` — возрастной рейтинг, например:
+- `name` — возрастной рейтинг, например:
     - `PG` — детям рекомендуется смотреть такой фильм с родителями;
     - `PG-13` — детям до 13 лет смотреть такой фильм нежелательно.
 
@@ -102,8 +102,8 @@
 <details> <summary>Получение списка всех фильмов</summary>  
 
 ```sql  
-SELECT *  
-FROM film  
+SELECT *
+FROM FILM  
 ```  
 
 </details>  
@@ -111,8 +111,8 @@ FROM film
 <details> <summary>Получение списка всех пользователей</summary>  
 
 ```sql  
-SELECT *  
-FROM user_account  
+SELECT *
+FROM USER_ACCOUNT  
 ```  
 
 </details>  
@@ -120,10 +120,10 @@ FROM user_account
 <details> <summary>Получение списка `?` наиболее популярных фильмов</summary>  
 
 ```sql  
-SELECT f.name, COUNT(fl.user_id) AS total_likes  
-FROM film AS f 
-JOIN FILM_LIKES AS fl ON f.id = fl.film_id   
-GROUP BY f.name  
+SELECT f.name, COUNT(fl.user_id) AS total_likes
+FROM FILM AS f
+       LEFT JOIN FILM_LIKES AS fl ON f.id = fl.film_id
+GROUP BY f.id
 ORDER BY total_likes DESC
 LIMIT ? -- подставить количество фильмов для вывода  
 ```  
@@ -134,9 +134,9 @@ LIMIT ? -- подставить количество фильмов для вы�
 
 ```sql  
 SELECT u.id as friend_id, u.email, u.login, u.name, u.birthday
-FROM user_account u
-JOIN (SELECT friend_id FROM friendship WHERE user_id = ?) fs1
-JOIN (SELECT friend_id FROM friendship WHERE user_id = ?) fs2
+FROM USER_ACCOUNT u
+       JOIN (SELECT friend_id FROM FRIENDSHIP WHERE user_id = ?) fs1
+       JOIN (SELECT friend_id FROM FRIENDSHIP WHERE user_id = ?) fs2
 ON fs1.friend_id = fs2.friend_id
 WHERE u.id = fs1.friend_id;
 ```  

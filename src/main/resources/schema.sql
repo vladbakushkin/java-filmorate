@@ -1,7 +1,7 @@
 create table if not exists MPA
 (
     ID     INTEGER auto_increment,
-    RATING CHARACTER VARYING,
+    NAME CHARACTER VARYING,
     constraint MPA
         primary key (ID)
 );
@@ -48,11 +48,10 @@ create table if not exists USER_ACCOUNT
 );
 create table if not exists FILM_LIKES
 (
-    ID      INTEGER auto_increment,
-    FILM_ID INTEGER,
-    USER_ID INTEGER,
-    constraint FILM_LIKE
-        primary key (ID),
+    FILM_ID INTEGER not null,
+    USER_ID INTEGER not null,
+    constraint FILM_LIKES_PK
+        primary key (FILM_ID, USER_ID),
     constraint FILM_LIKES_FILM_ID_FK
         foreign key (FILM_ID) references FILM,
     constraint FILM_LIKE_USER_ACCOUNT_ID_FK
