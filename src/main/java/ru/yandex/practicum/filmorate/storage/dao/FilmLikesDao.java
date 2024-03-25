@@ -5,6 +5,8 @@ import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.mapper.FilmMapper;
 import ru.yandex.practicum.filmorate.model.Film;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 @Repository
@@ -45,5 +47,14 @@ public class FilmLikesDao {
         String sqlLikes = "SELECT fl.USER_ID FROM FILM_LIKES fl WHERE fl.FILM_ID = ?";
         return jdbcTemplate.query(sqlLikes,
                 (rsLike, rowNumLike) -> rsLike.getInt("user_id"), filmId);
+    }
+
+    public void updateFilmLikes(int filmId, Collection<Integer> likes) {
+        String sql = "MERGE INTO FILM_LIKES (FILM_ID, USER_ID) VALUES (?, ?)";
+        List<Object[]> parameters = new ArrayList<>();
+        for (Integer userId : likes) {
+            parameters.add(new Object[]{filmId, userId});
+        }
+        jdbcTemplate.batchUpdate(sql, parameters);
     }
 }

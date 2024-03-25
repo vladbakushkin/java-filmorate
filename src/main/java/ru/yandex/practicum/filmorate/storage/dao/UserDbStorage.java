@@ -1,10 +1,8 @@
 package ru.yandex.practicum.filmorate.storage.dao;
 
-import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
-import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
 import ru.yandex.practicum.filmorate.mapper.UserMapper;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
@@ -33,12 +31,8 @@ public class UserDbStorage implements UserStorage {
     @Override
     public User updateUser(User user) {
         String sql = "UPDATE user_account SET email = ?, login = ?, name = ?, birthday = ? where id = ?";
-        try {
-            jdbcTemplate.update(sql, user.getEmail(), user.getLogin(), user.getName(), user.getBirthday(), user.getId());
-            return getUser(user.getId());
-        } catch (DataAccessException e) {
-            throw new UserNotFoundException("Пользователя с id \"" + user.getId() + "\" нет в хранилище.");
-        }
+        jdbcTemplate.update(sql, user.getEmail(), user.getLogin(), user.getName(), user.getBirthday(), user.getId());
+        return getUser(user.getId());
     }
 
     @Override
@@ -56,10 +50,6 @@ public class UserDbStorage implements UserStorage {
     @Override
     public User getUser(int id) {
         String sql = "SELECT * FROM user_account WHERE id = ?";
-        try {
-            return jdbcTemplate.queryForObject(sql, new UserMapper(), id);
-        } catch (DataAccessException e) {
-            throw new UserNotFoundException("Пользователя с id \"" + id + "\" нет в хранилище.");
-        }
+        return jdbcTemplate.queryForObject(sql, new UserMapper(), id);
     }
 }

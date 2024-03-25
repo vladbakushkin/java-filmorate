@@ -5,8 +5,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import ru.yandex.practicum.filmorate.exception.FilmNotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
@@ -32,8 +32,6 @@ class FilmDbStorageTest {
     void setUp() {
         film = new Film("name", "description", mpa, "2000-01-01", 100);
         LinkedHashSet<Genre> genres = new LinkedHashSet<>();
-        genres.add(new Genre(1, "Комедия"));
-        genres.add(new Genre(2, "Драма"));
         film.setGenres(genres);
         filmDbStorage = new FilmDbStorage(jdbcTemplate);
     }
@@ -61,8 +59,7 @@ class FilmDbStorageTest {
 
         // then
         assertThatThrownBy(() -> filmDbStorage.getFilm(addedFilm.getId()))
-                .isInstanceOf(FilmNotFoundException.class)
-                .hasMessage("Фильма с id \"" + addedFilm.getId() + "\" нет в хранилище.");
+                .isInstanceOf(EmptyResultDataAccessException.class);
     }
 
     @Test
@@ -93,8 +90,7 @@ class FilmDbStorageTest {
 
         // then
         assertThatThrownBy(() -> filmDbStorage.updateFilm(newFilm))
-                .isInstanceOf(FilmNotFoundException.class)
-                .hasMessage("Фильма с id \"" + newFilm.getId() + "\" нет в хранилище.");
+                .isInstanceOf(EmptyResultDataAccessException.class);
     }
 
     @Test

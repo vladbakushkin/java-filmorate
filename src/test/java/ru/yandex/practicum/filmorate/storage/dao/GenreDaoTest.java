@@ -5,8 +5,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import ru.yandex.practicum.filmorate.exception.GenreNotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
@@ -68,8 +68,7 @@ class GenreDaoTest {
         int id = 9999;
         // then
         assertThatThrownBy(() -> genreDao.findGenreById(id))
-                .isInstanceOf(GenreNotFoundException.class)
-                .hasMessage("Genre with id " + id + " not found.");
+                .isInstanceOf(EmptyResultDataAccessException.class);
     }
 
     @Test

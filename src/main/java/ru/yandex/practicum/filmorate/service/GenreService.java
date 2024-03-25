@@ -1,10 +1,12 @@
 package ru.yandex.practicum.filmorate.service;
 
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exception.GenreNotFoundException;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.dao.GenreDao;
 
-import java.util.Collection;
+import java.util.List;
 
 @Service
 public class GenreService {
@@ -15,11 +17,15 @@ public class GenreService {
         this.genreDao = genreDao;
     }
 
-    public Collection<Genre> findAll() {
+    public List<Genre> findAll() {
         return genreDao.findAll();
     }
 
     public Genre findGenreById(int id) {
-        return genreDao.findGenreById(id);
+        try {
+            return genreDao.findGenreById(id);
+        } catch (EmptyResultDataAccessException e) {
+            throw new GenreNotFoundException("Такого жанра нет в хранилище");
+        }
     }
 }

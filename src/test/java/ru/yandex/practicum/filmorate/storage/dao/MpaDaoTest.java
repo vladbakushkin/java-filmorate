@@ -5,8 +5,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import ru.yandex.practicum.filmorate.exception.MpaNotFoundException;
 import ru.yandex.practicum.filmorate.model.Mpa;
 
 import java.util.List;
@@ -68,7 +68,6 @@ class MpaDaoTest {
         int id = 9999;
         // then
         assertThatThrownBy(() -> mpaDao.findMpaById(id))
-                .isInstanceOf(MpaNotFoundException.class)
-                .hasMessage("MPA with id " + id + " not found.");
+                .isInstanceOf(EmptyResultDataAccessException.class);
     }
 }

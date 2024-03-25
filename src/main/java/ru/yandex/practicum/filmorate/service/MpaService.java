@@ -1,6 +1,8 @@
 package ru.yandex.practicum.filmorate.service;
 
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exception.MpaNotFoundException;
 import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.storage.dao.MpaDao;
 
@@ -20,6 +22,10 @@ public class MpaService {
     }
 
     public Mpa findMpaById(int id) {
-        return mpaDao.findMpaById(id);
+        try {
+            return mpaDao.findMpaById(id);
+        } catch (EmptyResultDataAccessException e) {
+            throw new MpaNotFoundException("MPA with id " + id + " not found.");
+        }
     }
 }

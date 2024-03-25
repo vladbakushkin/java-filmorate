@@ -1,9 +1,7 @@
 package ru.yandex.practicum.filmorate.storage.dao;
 
-import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
-import ru.yandex.practicum.filmorate.exception.MpaNotFoundException;
 import ru.yandex.practicum.filmorate.model.Mpa;
 
 import java.sql.ResultSet;
@@ -26,11 +24,7 @@ public class MpaDao {
 
     public Mpa findMpaById(int id) {
         String sql = "SELECT * FROM MPA WHERE ID = ?";
-        try {
-            return jdbcTemplate.queryForObject(sql, this::mapRowToMpa, id);
-        } catch (DataAccessException e) {
-            throw new MpaNotFoundException("MPA with id " + id + " not found.");
-        }
+        return jdbcTemplate.queryForObject(sql, this::mapRowToMpa, id);
     }
 
     private Mpa mapRowToMpa(ResultSet rs, int rowNum) throws SQLException {

@@ -6,8 +6,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.List;
@@ -71,8 +71,7 @@ class UserDbStorageTest {
         user.setId(9999);
 
         AssertionsForClassTypes.assertThatThrownBy(() -> userDbStorage.updateUser(user))
-                .isInstanceOf(UserNotFoundException.class)
-                .hasMessage("Пользователя с id \"" + user.getId() + "\" нет в хранилище.");
+                .isInstanceOf(EmptyResultDataAccessException.class);
     }
 
     @Test
@@ -86,8 +85,7 @@ class UserDbStorageTest {
 
         // then
         assertThatThrownBy(() -> userDbStorage.getUser(user.getId()))
-                .isInstanceOf(UserNotFoundException.class)
-                .hasMessage("Пользователя с id \"" + user.getId() + "\" нет в хранилище.");
+                .isInstanceOf(EmptyResultDataAccessException.class);
     }
 
     @Test
