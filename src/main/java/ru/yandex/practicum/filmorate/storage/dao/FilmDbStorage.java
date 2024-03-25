@@ -71,8 +71,7 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     private void batchUpdateFilmGenres(int filmId, Collection<Genre> genres) {
-        jdbcTemplate.update("DELETE FROM FILM_GENRE WHERE FILM_ID = ?", filmId);
-        String sql = "INSERT INTO FILM_GENRE (FILM_ID, GENRE_ID) VALUES (?, ?)";
+        String sql = "MERGE INTO FILM_GENRE (FILM_ID, GENRE_ID) VALUES (?, ?)";
         List<Object[]> parameters = new ArrayList<>();
         for (Genre genre : genres) {
             parameters.add(new Object[]{filmId, genre.getId()});
@@ -81,8 +80,7 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     private void batchUpdateFilmLikes(int filmId, Collection<Integer> likes) {
-        jdbcTemplate.update("DELETE FROM FILM_LIKES WHERE FILM_ID = ?", filmId);
-        String sql = "INSERT INTO FILM_LIKES (FILM_ID, USER_ID) VALUES (?, ?)";
+        String sql = "MERGE INTO FILM_LIKES (FILM_ID, USER_ID) VALUES (?, ?)";
         List<Object[]> parameters = new ArrayList<>();
         for (Integer userId : likes) {
             parameters.add(new Object[]{filmId, userId});

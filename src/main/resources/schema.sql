@@ -1,18 +1,18 @@
 create table if not exists MPA
 (
     ID     INTEGER auto_increment,
-    NAME CHARACTER VARYING,
+    NAME CHARACTER VARYING(255) not null,
     constraint MPA
         primary key (ID)
 );
 create table if not exists FILM
 (
     ID           INTEGER auto_increment,
-    NAME         CHARACTER VARYING not null,
+    NAME         CHARACTER VARYING(255) not null,
     DESCRIPTION  CHARACTER VARYING(255),
     MPA_ID INTEGER,
-    RELEASE_DATE DATE,
-    DURATION     INTEGER,
+    RELEASE_DATE DATE                   not null,
+    DURATION     INTEGER                not null,
     constraint FILM_PK
         primary key (ID),
     constraint FILM_MPA_ID_FK
@@ -21,7 +21,7 @@ create table if not exists FILM
 create table if not exists GENRE
 (
     ID   INTEGER auto_increment,
-    NAME CHARACTER VARYING,
+    NAME CHARACTER VARYING(255) not null,
     constraint GENRE
         primary key (ID)
 );
@@ -39,9 +39,9 @@ create table if not exists FILM_GENRE
 create table if not exists USER_ACCOUNT
 (
     ID       INTEGER auto_increment,
-    EMAIL    CHARACTER VARYING not null,
-    LOGIN    CHARACTER VARYING not null,
-    NAME     CHARACTER VARYING,
+    EMAIL CHARACTER VARYING(255) not null,
+    LOGIN CHARACTER VARYING(255) not null,
+    NAME  CHARACTER VARYING(255),
     BIRTHDAY DATE,
     constraint USER_ACCOUNT
         primary key (ID)
@@ -59,9 +59,9 @@ create table if not exists FILM_LIKES
 );
 create table if not exists FRIENDSHIP
 (
-    USER_ID               INTEGER,
-    FRIEND_ID             INTEGER,
-    FRIEND_STATUS_CONFIRM BOOLEAN,
+    USER_ID               INTEGER not null,
+    FRIEND_ID             INTEGER not null,
+    FRIEND_STATUS_CONFIRM BOOLEAN not null,
     constraint FRIENDSHIP_USER_ACCOUNT_ID_FK
         foreign key (USER_ID) references USER_ACCOUNT,
     constraint FRIENDSHIP_USER_ACCOUNT_ID_FK_2

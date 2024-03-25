@@ -73,6 +73,7 @@ class FilmDbStorageTest {
         mpa.setName("PG");
         Film newFilm = new Film("newName", "newDescription", mpa, "2010-11-11", 392);
         newFilm.setId(addedFilm.getId());
+        newFilm.setGenres(addedFilm.getGenres());
 
         // when
         Film filmUpdated = filmDbStorage.updateFilm(newFilm);
