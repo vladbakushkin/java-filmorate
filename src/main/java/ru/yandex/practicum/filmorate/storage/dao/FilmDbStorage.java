@@ -5,6 +5,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exception.FilmNotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.mapper.FilmMapper;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
@@ -57,14 +58,16 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public List<Film> getFilms() {
         String sql = "SELECT * FROM FILM";
-        return jdbcTemplate.query(sql, new FilmMapper(new MpaDao(jdbcTemplate), new GenreDao(jdbcTemplate), new FilmLikesDao(jdbcTemplate)));
+        return jdbcTemplate.query(sql, new FilmMapper(new MpaDao(jdbcTemplate), new GenreDao(jdbcTemplate),
+                new FilmLikesDao(jdbcTemplate)));
     }
 
     @Override
     public Film getFilm(int id) {
         String sql = "SELECT * FROM FILM WHERE ID = ?";
         try {
-            return jdbcTemplate.queryForObject(sql, new FilmMapper(new MpaDao(jdbcTemplate), new GenreDao(jdbcTemplate), new FilmLikesDao(jdbcTemplate)), id);
+            return jdbcTemplate.queryForObject(sql, new FilmMapper(new MpaDao(jdbcTemplate), new GenreDao(jdbcTemplate),
+                    new FilmLikesDao(jdbcTemplate)), id);
         } catch (DataAccessException e) {
             throw new FilmNotFoundException("Фильма с id \"" + id + "\" нет в хранилище.");
         }
@@ -73,7 +76,11 @@ public class FilmDbStorage implements FilmStorage {
     private void batchUpdateFilmGenres(int filmId, Collection<Genre> genres) {
         String sql = "MERGE INTO FILM_GENRE (FILM_ID, GENRE_ID) VALUES (?, ?)";
         List<Object[]> parameters = new ArrayList<>();
+        Integer countGenres = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM GENRE", Integer.class);
         for (Genre genre : genres) {
+            if (countGenres != null && genre.getId() > countGenres) {
+                throw new ValidationException("id жанра не может быть больше " + countGenres + " введенный id = " + genre.getId());
+            }
             parameters.add(new Object[]{filmId, genre.getId()});
         }
         jdbcTemplate.batchUpdate(sql, parameters);
