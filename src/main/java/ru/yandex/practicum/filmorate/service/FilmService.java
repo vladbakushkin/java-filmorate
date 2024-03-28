@@ -1,86 +1,127 @@
 package ru.yandex.practicum.filmorate.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exception.FilmNotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.UserStorage;
+import ru.yandex.practicum.filmorate.storage.dao.FilmLikesDao;
+import ru.yandex.practicum.filmorate.storage.dao.GenreDao;
 
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Set;
 
 @Service
 @Slf4j
 public class FilmService {
 
     private final FilmStorage filmStorage;
-    private final UserStorage userStorage;
+    private final UserService userService;
+    private final FilmLikesDao filmLikesDao;
+    private final GenreDao genreDao;
 
-    @Autowired
-    public FilmService(FilmStorage filmStorage, UserStorage userStorage) {
+    public FilmService(@Qualifier("FilmDbStorage") FilmStorage filmStorage,
+                       UserService userService,
+                       FilmLikesDao filmLikesDao,
+                       GenreDao genreDao) {
         this.filmStorage = filmStorage;
-        this.userStorage = userStorage;
+        this.userService = userService;
+        this.filmLikesDao = filmLikesDao;
+        this.genreDao = genreDao;
     }
 
     public Film addFilm(Film film) {
-        filmStorage.addFilm(film);
-        log.debug("Добавлен фильм: {}, {}, {}, {}, {}",
-                film.getId(), film.getName(), film.getDescription(), film.getReleaseDate(), film.getDuration());
-        return film;
+        final Film filmAdded = filmStorage.addFilm(film);
+
+        updateGenres(filmAdded.getId(), film.getGenres());
+
+        filmLikesDao.updateFilmLikes(filmAdded.getId(), film.getLikes());
+
+        log.debug("Добавлен фильм: id={},\n name={},\n description={},\n releaseDate={},\n duration={},\n mpaId={},\n genres={},\n",
+                filmAdded.getId(), filmAdded.getName(), filmAdded.getDescription(), filmAdded.getReleaseDate(),
+                filmAdded.getDuration(), filmAdded.getMpa().toString(), filmAdded.getGenres().toString());
+
+        return findFilmById(filmAdded.getId());
     }
 
     public Film updateFilm(Film film) {
-        filmStorage.updateFilm(film);
-        log.debug("Обновлен фильм: {}, {}, {}, {}, {}",
-                film.getId(), film.getName(), film.getDescription(), film.getReleaseDate(), film.getDuration());
-        return film;
+        this.findFilmById(film.getId());
+        final Film filmUpdated = filmStorage.updateFilm(film);
+
+        updateGenres(filmUpdated.getId(), film.getGenres());
+
+        filmLikesDao.updateFilmLikes(filmUpdated.getId(), film.getLikes());
+
+        log.debug("Обновлен фильм: {}, {}, {}, {}, {}, {}, {}",
+                filmUpdated.getId(), filmUpdated.getName(), filmUpdated.getDescription(), filmUpdated.getMpa().getId(),
+                filmUpdated.getGenres().toString(), filmUpdated.getReleaseDate(), filmUpdated.getDuration());
+        return findFilmById(filmUpdated.getId());
     }
 
     public List<Film> findAll() {
         final List<Film> films = filmStorage.getFilms();
-        log.debug("Текущее количество фильмов: {}", films.size());
+        log.debug("Все фильмы: {}", films.toString());
         return films;
     }
 
     public Film findFilmById(int filmId) {
-        final Film film = filmStorage.getFilm(filmId);
-        log.debug("Найден фильм: {}, {}, {}, {}, {}",
-                film.getId(), film.getName(), film.getDescription(), film.getReleaseDate(), film.getDuration());
-        return film;
+        try {
+            final Film film = filmStorage.getFilm(filmId);
+            log.debug("Найден фильм: id={},\n name={}, description={}, releaseDate={}, duration={}, mpaId={}, genres={},\n",
+                    film.getId(), film.getName(), film.getDescription(), film.getReleaseDate(),
+                    film.getDuration(), film.getMpa(), film.getGenres().toString());
+            return film;
+        } catch (EmptyResultDataAccessException e) {
+            throw new FilmNotFoundException("Фильма с id \"" + filmId + "\" нет в хранилище.");
+        }
     }
 
     public Film addLike(int filmId, int userId) {
-        final Film film = filmStorage.getFilm(filmId);
-        final User user = userStorage.getUser(userId);
-        film.addLike(user.getId());
-        filmStorage.updateFilm(film);
-        log.debug("Добавлен лайк фильму: {}, все лайки: {}",
-                film.getId(), film.getLikes().toString());
+        final Film film = this.findFilmById(filmId);
+        final User user = userService.findUserById(userId);
+        filmLikesDao.addLike(film.getId(), user.getId());
+        film.addLike(userId);
+        log.debug("Добавлен лайк фильму: {}", film);
         return film;
     }
 
     public Film removeLike(int filmId, int userId) {
-        final Film film = filmStorage.getFilm(filmId);
-        final User user = userStorage.getUser(userId);
+        final Film film = this.findFilmById(filmId);
+        final User user = userService.findUserById(userId);
+        filmLikesDao.removeLike(film.getId(), user.getId());
         film.removeLike(user.getId());
-        filmStorage.updateFilm(film);
-        log.debug("Удален лайк у фильма: {}, все лайки: {}",
-                film.getId(), film.getLikes().toString());
+        log.debug("Удален лайк у фильма: {}", film);
         return film;
     }
 
     public List<Film> getMostPopularFilms(int count) {
 
-        List<Film> mostPopularFilms = filmStorage.getFilms().stream()
-                .sorted(Film.COMPARATOR_LIKES_DESC)
-                .limit(count)
-                .collect(Collectors.toList());
+        List<Film> mostPopularFilms = filmLikesDao.getMostPopularFilms(count);
 
         log.debug("Список фильмов по лайкам: {}",
                 mostPopularFilms);
 
         return mostPopularFilms;
+    }
+
+    private void updateGenres(int filmId, Collection<Genre> genres) {
+        Set<Integer> filmGenresIds = new HashSet<>();
+        for (Genre genre : genres) {
+            filmGenresIds.add(genre.getId());
+        }
+
+        Set<Integer> matchGenresIds = genreDao.getMatchGenresId(filmGenresIds);
+
+        if (!filmGenresIds.equals(matchGenresIds)) {
+            throw new ValidationException("Некорректный ввод жанров: " + genres);
+        }
+        genreDao.updateFilmGenres(filmId, genres);
     }
 }

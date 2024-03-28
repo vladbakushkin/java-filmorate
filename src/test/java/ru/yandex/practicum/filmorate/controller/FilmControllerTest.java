@@ -2,49 +2,53 @@ package ru.yandex.practicum.filmorate.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
 import ru.yandex.practicum.filmorate.exception.FilmNotFoundException;
+import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.FilmService;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
+@AutoConfigureMockMvc
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 class FilmControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private WebApplicationContext webApplicationContext;
-
-    @BeforeEach
-    public void setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
-    }
+    @MockBean
+    private FilmService filmService;
 
     @Test
     void test1_addFilm() throws Exception {
         Film film = new Film("nisi eiusmod", "Mark Heckler",
                 "1967-03-25", 100);
+
+        when(filmService.addFilm(any(Film.class))).thenReturn(film);
 
         mockMvc.perform(
                         post("/films")
@@ -140,6 +144,8 @@ class FilmControllerTest {
                 "1989-04-17", 190);
         updatedFilm.setId(1);
 
+        when(filmService.updateFilm(any(Film.class))).thenReturn(updatedFilm);
+
         mockMvc.perform(
                         put("/films")
                                 .content(objectMapper.writeValueAsString(updatedFilm))
@@ -158,6 +164,8 @@ class FilmControllerTest {
                 "1989-04-17", 190);
         updatedFilm.setId(9999);
 
+        when(filmService.updateFilm(any(Film.class))).thenThrow(new FilmNotFoundException("Film not found"));
+
         mockMvc.perform(
                         put("/films")
                                 .content(objectMapper.writeValueAsString(updatedFilm))
@@ -173,6 +181,10 @@ class FilmControllerTest {
 
         Film film2 = new Film("film2", "film2",
                 "1967-03-25", 100);
+
+        List<Film> films = Arrays.asList(film1, film2);
+
+        when(filmService.findAll()).thenReturn(films);
 
         mockMvc.perform(
                         post("/films")
@@ -214,6 +226,8 @@ class FilmControllerTest {
         Film film = new Film("film", "film",
                 "1967-03-25", 100);
 
+        when(filmService.findFilmById(1)).thenReturn(film);
+
         mockMvc.perform(
                         post("/films")
                                 .content(objectMapper.writeValueAsString(film))
@@ -237,6 +251,8 @@ class FilmControllerTest {
     void test10_getFilmUnknownWithId9999() throws Exception {
         Film film = new Film("film", "film",
                 "1967-03-25", 100);
+
+        when(filmService.findFilmById(9999)).thenThrow(new FilmNotFoundException("Film not found"));
 
         mockMvc.perform(
                         post("/films")
@@ -280,6 +296,10 @@ class FilmControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
+        film2.addLike(1);
+        when(filmService.addLike(2, 1)).thenReturn(film2);
+        when(filmService.getMostPopularFilms(1)).thenReturn(List.of(film2));
+
         mockMvc.perform(
                         put("/films/2/like/1"))
                 .andExpect(status().isOk());
@@ -321,9 +341,14 @@ class FilmControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
+        film.addLike(1);
+        when(filmService.addLike(1, 1)).thenReturn(film);
+
         mockMvc.perform(
                         put("/films/1/like/1"))
                 .andExpect(status().isOk());
+
+        when(filmService.findFilmById(1)).thenReturn(film);
 
         MvcResult mvcResult1 = mockMvc.perform(
                         get("/films/1"))
@@ -334,6 +359,9 @@ class FilmControllerTest {
         Film film1WithLike = objectMapper.readValue(responseJson1, Film.class);
 
         assertEquals(1, film1WithLike.getLikes().size(), "Неверное количество лайков.");
+
+        film.removeLike(1);
+        when(filmService.removeLike(1, 1)).thenReturn(film);
 
         mockMvc.perform(
                         delete("/films/1/like/1"))
@@ -355,6 +383,7 @@ class FilmControllerTest {
         User user = new User("mail@mail.ru", "dolore", "Nick Name", "1946-08-20");
 
         Film film = new Film("film1", "film1", "1967-03-25", 90);
+        when(filmService.removeLike(1, -2)).thenThrow(new UserNotFoundException("User not found"));
 
         mockMvc.perform(
                         post("/users")
@@ -379,22 +408,28 @@ class FilmControllerTest {
 
     @Test
     void test14_getAllPopularFilms() throws Exception {
-        User user = new User("mail@mail.ru", "dolore", "Nick Name", "1946-08-20");
+        List<User> users = new ArrayList<>();
+        for (int i = 0; i < 6; i++) {
+            users.add(new User("mail@mail.ru", "dolore" + i, "Nick Name" + i, "1946-08-20"));
+        }
 
         for (int i = 0; i < 6; i++) {
             mockMvc.perform(
                             post("/users")
-                                    .content(objectMapper.writeValueAsString(user))
+                                    .content(objectMapper.writeValueAsString(users.get(i)))
                                     .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isOk());
         }
 
-        Film film = new Film("film1", "film1", "1967-03-25", 90);
+        List<Film> films = new ArrayList<>();
+        for (int i = 0; i < 15; i++) {
+            films.add(new Film("film" + i, "film" + i, "1967-03-25", 90));
+        }
 
         for (int i = 0; i < 15; i++) {
             mockMvc.perform(
                             post("/films")
-                                    .content(objectMapper.writeValueAsString(film))
+                                    .content(objectMapper.writeValueAsString(films.get(i)))
                                     .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isOk());
         }
@@ -423,6 +458,16 @@ class FilmControllerTest {
                         put("/films/14/like/6"))
                 .andExpect(status().isOk());
 
+        films.get(6).addLike(1);
+        films.get(6).addLike(2);
+        films.get(6).addLike(3);
+        films.get(9).addLike(4);
+        films.get(9).addLike(5);
+        films.get(14).addLike(6);
+
+        when(filmService.getMostPopularFilms(10)).thenReturn(List.of(films.get(6), films.get(9), films.get(14),
+                films.get(0), films.get(1), films.get(2), films.get(3), films.get(4), films.get(5), films.get(7)));
+
         MvcResult mvcResult = mockMvc.perform(
                         get("/films/popular"))
                 .andExpect(status().isOk())
@@ -438,6 +483,9 @@ class FilmControllerTest {
         assertEquals(2, filmList.get(1).getLikes().size(), "Неверное количество лайков.");
         assertEquals(1, filmList.get(2).getLikes().size(), "Неверное количество лайков.");
         assertEquals(0, filmList.get(3).getLikes().size(), "Неверное количество лайков.");
+
+        when(filmService.getMostPopularFilms(5)).thenReturn(List.of(films.get(6), films.get(9), films.get(14),
+                films.get(0), films.get(1)));
 
         MvcResult mvcResult2 = mockMvc.perform(
                         get("/films/popular?count=5"))

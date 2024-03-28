@@ -8,8 +8,8 @@ import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.PastOrPresent;
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * User.
@@ -32,25 +32,19 @@ public class User {
     @PastOrPresent
     private LocalDate birthday;
 
-    private Set<Integer> friends;
-
     public User(String email, String login, String name, String birthday) {
         this.email = email;
         this.login = login;
         this.name = name;
         this.birthday = LocalDate.parse(birthday);
-        this.friends = new HashSet<>();
     }
 
-    public Set<Integer> getFriends() {
-        return new HashSet<>(friends);
-    }
-
-    public void addFriend(int friendId) {
-        friends.add(friendId);
-    }
-
-    public void removeFriend(int friendId) {
-        friends.remove(friendId);
+    public Map<String, Object> toMap() {
+        Map<String, Object> values = new HashMap<>();
+        values.put("email", email);
+        values.put("login", login);
+        values.put("name", name);
+        values.put("birthday", birthday);
+        return values;
     }
 }
